@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espacio Digital - Arte Interactivo</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #030712;
+            font-family: sans-serif;
+            user-select: none;
+        }
+        #webgl-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        /* Visual UI Overlay strictly without text */
+        .overlay-bar {
+            position: absolute;
+            z-index: 10;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="relative w-full h-full bg-slate-950">
+
+    <!-- Container for Three.js Canvas -->
+    <div id="webgl-container"></div>
+
+    <!-- Framing Decorative UI Overlay (No readable text/words, pure abstract icons & geometric markers) -->
+    <div class="overlay-bar top-0 left-0 right-0 p-4 flex justify-between items-center bg-gradient-to-b from-slate-950/80 to-transparent">
+        <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-400/50 flex items-center justify-center">
+                <div class="w-3 h-3 bg-cyan-400 rounded-sm animate-pulse"></div>
+            </div>
+            <div class="flex space-x-1">
+                <div class="w-6 h-1.5 bg-cyan-500/40 rounded-full"></div>
+                <div class="w-10 h-1.5 bg-indigo-500/40 rounded-full"></div>
+                <div class="w-4 h-1.5 bg-emerald-500/40 rounded-full"></div>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <div class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></div>
+            <div class="w-16 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                <div class="w-2/3 h-full bg-gradient-to-r from-cyan-500 to-emerald-400"></div>
+            </div>
+            <div class="w-8 h-8 rounded-full border border-slate-700 flex items-center justify-center">
+                <div class="w-2 h-2 border-2 border-cyan-400 rounded-full"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="overlay-bar bottom-0 left-0 right-0 p-4 flex justify-between items-end bg-gradient-to-t from-slate-950/90 to-transparent">
+        <div class="flex space-x-2">
+            <div class="w-12 h-10 rounded bg-slate-900/60 border border-slate-800 backdrop-blur flex flex-col justify-between p-1.5">
+                <div class="w-full h-1 bg-cyan-400/60 rounded"></div>
+                <div class="w-2/3 h-1 bg-indigo-400/60 rounded"></div>
+                <div class="w-4/5 h-1 bg-slate-700 rounded"></div>
+            </div>
+            <div class="w-10 h-10 rounded bg-slate-900/60 border border-slate-800 backdrop-blur flex items-center justify-center">
+                <div class="w-4 h-4 border border-cyan-400/80 rotate-45"></div>
+            </div>
+        </div>
+
+        <!-- Abstract Interactive Hint Control -->
+        <div class="pointer-events-auto flex items-center space-x-3 bg-slate-900/70 border border-cyan-500/30 backdrop-blur px-4 py-2 rounded-full shadow-lg shadow-cyan-950/50">
+            <svg class="w-5 h-5 text-cyan-400 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path>
+            </svg>
+            <div class="w-2 h-2 bg-emerald-400 rounded-full"></div>
+            <div class="w-1.5 h-1.5 bg-cyan-400 rounded-full"></div>
+            <div class="w-1.5 h-1.5 bg-indigo-400 rounded-full"></div>
+        </div>
+    </div>
+
+    <!-- Main WebGL & Logic Script -->
+    <script>
+        window.onload = function() {
+            // --- SCENE SETUP ---
+            const container = document.getElementById('webgl-container');
+            const scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x030712, 0.015);
+
+            // Camera Setup
+            const aspect = window.innerWidth / window.innerHeight;
+            const camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
+            camera.position.set(30, 25, 35);
+            camera.lookAt(0, 2, 0);
+
+            // Renderer Setup
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            container.appendChild(renderer.domElement);
+
+            // --- LIGHTING ---
+            const ambientLight = new THREE.AmbientLight(0x0f172a, 1.5);
+            scene.add(ambientLight);
+
+            const dirLight1 = new THREE.DirectionalLight(0x06b6d4, 2.5); // Cyan light
+            dirLight1.position.set(20, 40, 20);
+            scene.add(dirLight1);
+
+            const dirLight2 = new THREE.DirectionalLight(0x8b5cf6, 2.0); // Purple light
+            dirLight2.position.set(-20, 20, -20);
+            scene.add(dirLight2);
+
+            const pointLight = new THREE.PointLight(0x10b981, 3, 30); // Emerald core glow
+            pointLight.position.set(0, 5, 0);
+            scene.add(pointLight);
+
+            // --- MATERIALS ---
+            const glassMaterial = new THREE.MeshPhysicalMaterial({
+                color: 0x0f172a,
+                metalness: 0.1,
+                roughness: 0.1,
+                transmission: 0.9,
+                transparent: true,
+                opacity: 0.75,
+                reflectivity: 0.9,
+                clearcoat: 1.0,
+                clearcoatRoughness: 0.1,
+                ior: 1.5
+            });
+
+            const glowingCyanMat = new THREE.MeshBasicMaterial({ color: 0x22d3ee, wireframe: true });
+            const glowingAmberMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.8, roughness: 0.2 });
+            const glowingPurpleMat = new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0x7e22ce, emissiveIntensity: 0.9 });
+            const lineMat = new THREE.LineBasicMaterial({ color: 0x06b6d4, transparent: true, opacity: 0.6 });
+            const brightLineMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.9 });
+
+            // Main Interactive World Group
+            const worldGroup = new THREE.Group();
+            scene.add(worldGroup);
+
+            // --- ISOMETRIC GRID BASE ---
+            const gridHelper = new THREE.GridHelper(60, 60, 0x06b6d4, 0x1e293b);
+            gridHelper.position.y = -4;
+            worldGroup.add(gridHelper);
+
+            // --- MODULAR DIGITAL ARCHITECTURE STRUCTURES ---
+            const interactiveObjects = [];
+
+            // Helper: Glass City Blocks / Modules
+            function createModule(x, y, z, w, h, d, accentColor = 0x22d3ee) {
+                const group = new THREE.Group();
+                group.position.set(x, y, z);
+
+                // Main glass box
+                const boxGeo = new THREE.BoxGeometry(w, h, d);
+                const boxMesh = new THREE.Mesh(boxGeo, glassMaterial);
+                group.add(boxMesh);
+
+                // Wireframe outline
+                const edges = new THREE.EdgesGeometry(boxGeo);
+                const wireframe = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: accentColor, transparent: true, opacity: 0.7 }));
+                group.add(wireframe);
+
+                // Internal core / server rack representation
+                const coreGeo = new THREE.BoxGeometry(w * 0.5, h * 0.7, d * 0.5);
+                const coreMat = new THREE.MeshStandardMaterial({
+                    color: 0x030712,
+                    emissive: accentColor,
+                    emissiveIntensity: 0.4,
+                    roughness: 0.3
+                });
+                const core = new THREE.Mesh(coreGeo, coreMat);
+                group.add(core);
+
+                worldGroup.add(group);
+                boxMesh.userData = { parentGroup: group, originalY: y, wireframe: wireframe };
+                interactiveObjects.push(boxMesh);
+                return group;
+            }
+
+            // Create modular cluster (Digital Space Infrastructure)
+            const moduleCoords = [
+                // Center cluster
+                {x: 0, y: 0, z: 0, w: 4, h: 6, d: 4, col: 0x22d3ee},
+                {x: 4.5, y: -1, z: 1, w: 3, h: 4, d: 3, col: 0x38bdf8},
+                {x: -4.5, y: 1, z: -1, w: 3.5, h: 8, d: 3.5, col: 0xa855f7},
+                {x: 1, y: 2, z: -4.5, w: 3, h: 10, d: 3, col: 0x34d399},
+
+                // Satellite modules
+                {x: 9, y: 1, z: -5, w: 3, h: 5, d: 3, col: 0xf59e0b},
+                {x: -8, y: -0.5, z: 6, w: 4, h: 3, d: 4, col: 0xec4899},
+                {x: -7, y: 3, z: -7, w: 3, h: 7, d: 3, col: 0x22d3ee},
+                {x: 7, y: -0.5, z: 7, w: 4, h: 4, d: 3, col: 0x8b5cf6},
+            ];
+
+            moduleCoords.forEach(c => createModule(c.x, c.y, c.z, c.w, c.h, c.d, c.col));
+
+            // --- DATA PIPELINES & CONDUITS ---
+            const pipelineCurves = [
+                new THREE.CatmullRomCurve3([
+                    new THREE.Vector3(-12, -3, -12),
+                    new THREE.Vector3(-6, -1, -5),
+                    new THREE.Vector3(0, 0, 0),
+                    new THREE.Vector3(5, 2, 4),
+                    new THREE.Vector3(12, 1, 10)
+                ]),
+                new THREE.CatmullRomCurve3([
+                    new THREE.Vector3(-10, 4, 10),
+                    new THREE.Vector3(-4.5, 1, -1),
+                    new THREE.Vector3(0, 3, 0),
+                    new THREE.Vector3(9, 1, -5)
+                ])
+            ];
+
+            pipelineCurves.forEach((curve, idx) => {
+                const tubeGeo = new THREE.TubeGeometry(curve, 64, 0.2, 8, false);
+                const tubeMat = new THREE.MeshPhysicalMaterial({
+                    color: idx === 0 ? 0x06b6d4 : 0xa855f7,
+                    emissive: idx === 0 ? 0x0891b2 : 0x7e22ce,
+                    emissiveIntensity: 0.6,
+                    transparent: true,
+                    opacity: 0.8,
+                    roughness: 0.2
+                });
+                const tube = new THREE.Mesh(tubeGeo, tubeMat);
+                worldGroup.add(tube);
+
+                // Pipe wireframe outer sleeve
+                const sleeveGeo = new THREE.TubeGeometry(curve, 32, 0.35, 6, false);
+                const sleeveMat = new THREE.MeshBasicMaterial({
+                    color: 0x38bdf8,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.25
+                });
+                const sleeve = new THREE.Mesh(sleeveGeo, sleeveMat);
+                worldGroup.add(sleeve);
+            });
+
+            // --- ABSTRACT FLOATING UI PANELS (STRICTLY NO TEXT) ---
+            function createAbstractUIPanel(x, y, z, rx, ry, rz) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 320;
+                const ctx = canvas.getContext('2d');
+
+                // Draw Abstract UI elements (Graphs, charts, nodes, status bars, NO TEXT)
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+                ctx.fillRect(0, 0, 512, 320);
+
+                // Panel Border
+                ctx.strokeStyle = '#22d3ee';
+                ctx.lineWidth = 6;
+                ctx.strokeRect(10, 10, 492, 300);
+
+                // Graph Line 1
+                ctx.beginPath();
+                ctx.strokeStyle = '#34d399';
+                ctx.lineWidth = 4;
+                ctx.moveTo(30, 200);
+                ctx.lineTo(90, 150);
+                ctx.lineTo(150, 180);
+                ctx.lineTo(220, 100);
+                ctx.lineTo(290, 140);
+                ctx.lineTo(360, 70);
+                ctx.lineTo(470, 110);
+                ctx.stroke();
+
+                // Graph Filled Area
+                ctx.lineTo(470, 250);
+                ctx.lineTo(30, 250);
+                ctx.fillStyle = 'rgba(52, 211, 153, 0.15)';
+                ctx.fill();
+
+                // Circular Metrics / Abstract Gauges
+                ctx.beginPath();
+                ctx.arc(80, 70, 30, 0, Math.PI * 1.5);
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 6;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(160, 70, 30, 0, Math.PI * 1.8);
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 6;
+                ctx.stroke();
+
+                // Abstract Progress / Segmented Bars
+                for (let i = 0; i < 12; i++) {
+                    ctx.fillStyle = i < 8 ? '#22d3ee' : '#334155';
+                    ctx.fillRect(230 + i * 20, 60, 14, 20);
+                }
+
+                // Grid dots
+                ctx.fillStyle = '#64748b';
+                for (let i = 0; i < 8; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        ctx.beginPath();
+                        ctx.arc(40 + i * 60, 275 + j * 12, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const panelGeo = new THREE.PlaneGeometry(8, 5);
+                const panelMat = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.85
+                });
+
+                const panelMesh = new THREE.Mesh(panelGeo, panelMat);
+                panelMesh.position.set(x, y, z);
+                panelMesh.rotation.set(rx, ry, rz);
+
+                // Floating frame behind panel
+                const frameGeo = new THREE.PlaneGeometry(8.4, 5.4);
+                const frameEdges = new THREE.EdgesGeometry(frameGeo);
+                const frameLine = new THREE.LineSegments(frameEdges, new THREE.LineBasicMaterial({ color: 0x38bdf8 }));
+                panelMesh.add(frameLine);
+
+                worldGroup.add(panelMesh);
+            }
+
+            createAbstractUIPanel(-10, 8, 2, 0, Math.PI / 6, 0);
+            createAbstractUIPanel(10, 6, -4, 0, -Math.PI / 5, 0);
+
+            // --- GLOWING NODES & CONNECTIONS ---
+            const nodesGroup = new THREE.Group();
+            const nodePositions = [
+                new THREE.Vector3(-4.5, 9.5, -1),
+                new THREE.Vector3(1, 12.5, -4.5),
+                new THREE.Vector3(9, 6.5, -5),
+                new THREE.Vector3(-8, 3.5, 6),
+                new THREE.Vector3(7, 4, 7),
+                new THREE.Vector3(0, 6.5, 0)
+            ];
+
+            const nodeSpheres = [];
+
+            nodePositions.forEach((pos) => {
+                // Sphere Node
+                const nodeGeo = new THREE.SphereGeometry(0.6, 16, 16);
+                const nodeMat = new THREE.MeshStandardMaterial({
+                    color: 0x22d3ee,
+                    emissive: 0x06b6d4,
+                    emissiveIntensity: 1,
+                    roughness: 0.1
+                });
+                const nodeMesh = new THREE.Mesh(nodeGeo, nodeMat);
+                nodeMesh.position.copy(pos);
+
+                // Outer pulsing ring
+                const ringGeo = new THREE.RingGeometry(0.9, 1.1, 32);
+                const ringMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+                const ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.rotation.x = Math.PI / 2;
+                nodeMesh.add(ring);
+
+                nodesGroup.add(nodeMesh);
+                nodeSpheres.push({ mesh: nodeMesh, ring: ring, basePos: pos.clone() });
+            });
+
+            worldGroup.add(nodesGroup);
+
+            // Constellation Lines connecting nodes
+            const nodeLineGeo = new THREE.BufferGeometry();
+            const linePositions = [];
+
+            for (let i = 0; i < nodePositions.length; i++) {
+                for (let j = i + 1; j < nodePositions.length; j++) {
+                    linePositions.push(nodePositions[i].x, nodePositions[i].y, nodePositions[i].z);
+                    linePositions.push(nodePositions[j].x, nodePositions[j].y, nodePositions[j].z);
+                }
+            }
+            nodeLineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+            const nodeLines = new THREE.LineSegments(nodeLineGeo, lineMat);
+            worldGroup.add(nodeLines);
+
+            // --- AMBIENT FLOATING PARTICLES ---
+            const particleCount = 250;
+            const particleGeo = new THREE.BufferGeometry();
+            const particlePositions = new Float32Array(particleCount * 3);
+            const particleScales = new Float32Array(particleCount);
+
+            for (let i = 0; i < particleCount * 3; i += 3) {
+                particlePositions[i] = (Math.random() - 0.5) * 50;
+                particlePositions[i + 1] = Math.random() * 30 - 5;
+                particlePositions[i + 2] = (Math.random() - 0.5) * 50;
+                particleScales[i / 3] = Math.random();
+            }
+
+            particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+
+            const particleMat = new THREE.PointsMaterial({
+                color: 0x38bdf8,
+                size: 0.35,
+                transparent: true,
+                opacity: 0.7,
+                blending: THREE.AdditiveBlending
+            });
+
+            const particles = new THREE.Points(particleGeo, particleMat);
+            worldGroup.add(particles);
+
+            // --- INTERACTION & ORBIT CONTROL LOGIC ---
+            let isDragging = false;
+            let previousMousePosition = { x: 0, y: 0 };
+            let targetRotationX = 0;
+            let targetRotationY = 0;
+
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+
+            // Pointer down / move / up listeners for interactive rotation
+            window.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                // Raycasting for object hover effects
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                if (isDragging) {
+                    const deltaX = e.clientX - previousMousePosition.x;
+                    const deltaY = e.clientY - previousMousePosition.y;
+
+                    targetRotationY += deltaX * 0.005;
+                    targetRotationX += deltaY * 0.005;
+
+                    // Limit vertical tilt
+                    targetRotationX = Math.max(-Math.PI / 4, Math.min(Math.PI / 4, targetRotationX));
+
+                    previousMousePosition = { x: e.clientX, y: e.clientY };
+                }
+            });
+
+            window.addEventListener('mouseup', () => { isDragging = false; });
+
+            // Touch events support for mobile devices
+            window.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+            });
+
+            window.addEventListener('touchmove', (e) => {
+                if (isDragging && e.touches.length === 1) {
+                    const deltaX = e.touches[0].clientX - previousMousePosition.x;
+                    const deltaY = e.touches[0].clientY - previousMousePosition.y;
+
+                    targetRotationY += deltaX * 0.005;
+                    targetRotationX += deltaY * 0.005;
+                    targetRotationX = Math.max(-Math.PI / 4, Math.min(Math.PI / 4, targetRotationX));
+
+                    previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+            });
+
+            window.addEventListener('touchend', () => { isDragging = false; });
+
+            // Window resize handler
+            window.addEventListener('resize', onWindowResize, false);
+
+            function onWindowResize() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            // --- ANIMATION LOOP ---
+            let clock = new THREE.Clock();
+
+            function animate() {
+                requestAnimationFrame(animate);
+
+                const elapsedTime = clock.getElapsedTime();
+
+                // Smooth rotation interpolation
+                worldGroup.rotation.y += (targetRotationY - worldGroup.rotation.y) * 0.05;
+                worldGroup.rotation.x += (targetRotationX - worldGroup.rotation.x) * 0.05;
+
+                // Continuous subtle background rotation
+                if (!isDragging) {
+                    targetRotationY += 0.001;
+                }
+
+                // Animate Node Pulsing & Floating
+                nodeSpheres.forEach((nodeObj, idx) => {
+                    nodeObj.mesh.position.y = nodeObj.basePos.y + Math.sin(elapsedTime * 2 + idx) * 0.3;
+                    const scale = 1 + Math.sin(elapsedTime * 3 + idx) * 0.2;
+                    nodeObj.ring.scale.set(scale, scale, scale);
+                });
+
+                // Hover Raycasting Interactivity
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(interactiveObjects);
+
+                interactiveObjects.forEach(obj => {
+                    // Reset elevated position
+                    obj.userData.parentGroup.position.y += (obj.userData.originalY - obj.userData.parentGroup.position.y) * 0.1;
+                    obj.userData.wireframe.material.opacity = 0.6;
+                });
+
+                if (intersects.length > 0) {
+                    const hoveredObj = intersects[0].object;
+                    if (hoveredObj.userData && hoveredObj.userData.parentGroup) {
+                        // Elevate hovered block
+                        hoveredObj.userData.parentGroup.position.y += (hoveredObj.userData.originalY + 0.8 - hoveredObj.userData.parentGroup.position.y) * 0.2;
+                        hoveredObj.userData.wireframe.material.opacity = 1.0;
+                    }
+                }
+
+                // Animate Ambient Particles
+                const positions = particles.geometry.attributes.position.array;
+                for (let i = 1; i < particleCount * 3; i += 3) {
+                    positions[i] += Math.sin(elapsedTime + i) * 0.01;
+                    if (positions[i] > 25) positions[i] = -5;
+                }
+                particles.geometry.attributes.position.needsUpdate = true;
+
+                renderer.render(scene, camera);
+            }
+
+            animate();
+        };
+    </script>
+</body>
+</html>
